@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../../lib/supabase";
 
 
 
-export default function ReportIssuePage() {
+function ReportIssueForm() {
     const searchParams = useSearchParams();
     const barcode = searchParams.get("barcode") || "";
     const productName = searchParams.get("name") || "";
@@ -201,5 +201,13 @@ export default function ReportIssuePage() {
 
             <BottomNav />
         </main>
+    );
+}
+
+export default function ReportIssuePage() {
+    return (
+        <Suspense fallback={<main className="min-h-screen bg-[#f7f7f7]" />}>
+            <ReportIssueForm />
+        </Suspense>
     );
 }

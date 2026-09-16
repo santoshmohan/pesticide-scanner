@@ -35,7 +35,7 @@ export default function HomePage() {
 
         {history.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
-            <div className="text-6xl mb-4">🧴</div>
+            <div className="text-6xl mb-4">🧪</div>
             <h3 className="text-xl font-semibold mb-2">No scanned products</h3>
             <p className="text-gray-500 mb-6">
               Scan a product barcode to begin.
