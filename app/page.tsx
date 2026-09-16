@@ -1,69 +1,112 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { getHistory, removeFromHistory, HistoryItem } from "@/lib/history";
+
+export default function HomePage() {
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
+
+  function handleDelete(barcode: string) {
+    removeFromHistory(barcode);
+    setHistory(getHistory());
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-[#f7f7f7] pb-28">
+      <div className="max-w-md mx-auto px-5 pt-10">
+        <h1 className="text-4xl font-bold mb-2">Pesticide Scanner</h1>
+        <p className="text-gray-500 mb-6">
+          Scan or enter the barcode manually
+        </p>
+
+        <Link
+          href="/scan"
+          className="block w-full rounded-full bg-green-500 text-white text-center py-4 font-semibold mb-8"
+        >
+          Scan a product
+        </Link>
+
+        <h2 className="text-2xl font-bold mb-4">History</h2>
+
+        {history.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
+            <div className="text-6xl mb-4">🧴</div>
+            <h3 className="text-xl font-semibold mb-2">No scanned products</h3>
+            <p className="text-gray-500 mb-6">
+              Scan a product barcode to begin.
+            </p>
+            <Link
+              href="/scan"
+              className="inline-block rounded-full bg-green-500 text-white px-6 py-3 font-medium"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+              Scan now
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {history.map((item) => (
+              <div
+                key={item.barcode}
+                className="bg-white rounded-3xl p-4 shadow-sm flex items-center gap-4"
+              >
+                <img
+                  src={item.image_url || "https://placehold.co/80x80?text=Product"}
+                  alt={item.name}
+                  className="w-20 h-20 rounded-2xl object-cover bg-gray-100"
+                />
+
+                <Link
+                  href={`/product/${item.barcode}`}
+                  className="flex-1 min-w-0"
+                >
+                  <h3 className="font-semibold text-lg truncate">{item.name}</h3>
+                  <p className="text-gray-500">{item.brand || "Unknown brand"}</p>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <span
+                      className={`w-3 h-3 rounded-full ${
+                        item.score >= 70
+                          ? "bg-green-500"
+                          : item.score >= 40
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                      }`}
+                    />
+                    <span className="text-sm text-gray-700">
+                      {item.verdict} • {item.score}/100
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(item.scannedAt).toLocaleString()}
+                  </p>
+                </Link>
+
+                <button
+                  onClick={() => handleDelete(item.barcode)}
+                  className="text-sm text-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white rounded-full shadow-lg px-6 py-4 flex justify-around">
+        <Link href="/" className="text-green-600 font-semibold">
+          History
+        </Link>
+        <Link href="/scan" className="text-gray-700 font-semibold">
+          Scan
+        </Link>
+      </nav>
+    </main>
   );
 }
