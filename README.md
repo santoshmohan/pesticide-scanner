@@ -75,10 +75,10 @@ Or copy the contents of supabase/seed_demo_data.sql and paste into the SQL Edito
 
 This creates:
 
-`ingredients` table
-`products` table
-`product_ingredients` junction table
-`issues` table (for issue reporting)
+- `ingredients` table
+- `products` table
+- `product_ingredients` junction table
+- `issues` table (for issue reporting)
 Sample demo data (8 products, 11 ingredients)
 
 6. Run the development server
@@ -91,16 +91,17 @@ Open http://localhost:3000 in your browser.
 Sample Barcodes
 Use these barcodes to test the scanner:
 
-|Barcode	Product Name	Expected Score	Verdict
-|111111111111	NatureSafe Yard Spray	90	Good
-|987654321098	BugShield Home	75	Good
-|123456789012	WeedClear Pro	65	Moderate
-|222222222222	Ultra Weed Destroyer	30	Bad
-|666666666666	Heavy Duty Lawn Killer	35	Bad
+|Barcode	    |Product Name	          |Expected Score	|Verdict  |
+| ---         | ---                   |  :---:        |---      |
+|111111111111	|NatureSafe Yard Spray  |90             |	Good    |
+|987654321098	|BugShield Home	        |75             |	Good    |
+|123456789012	|WeedClear Pro	        |65	            | Moderate|
+|222222222222	|Ultra Weed Destroyer	  |30	            | Bad     |
+|666666666666	|Heavy Duty Lawn Killer	|35             |	Bad     |
 
 ### Manual Testing
-- Go to /scan
-- Enter barcode: 111111111111
+- Go to `/scan`
+- Enter barcode: `111111111111`
 - Click Search Barcode
 - View product details with score
 
@@ -169,7 +170,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 For questions or issues, contact: santosh.mce@gmail.com
 
 ## 🙏 Acknowledgments
-Inspired by Yuka
-Built with Next.js
-Database powered by Supabase
-Barcode scanning via ZXing
+- Inspired by Yuka
+- Built with Next.js
+- Database powered by Supabase
+- Barcode scanning via ZXing
