@@ -18,8 +18,12 @@ create table if not exists products (
   barcode text not null unique,
   name text not null,
   brand text,
-  category text
+  category text,
+  image_url text
 );
+
+alter table products
+  add column if not exists image_url text;
 
 create table if not exists product_ingredients (
   id bigint generated always as identity primary key,
@@ -80,6 +84,10 @@ insert into products (barcode, name, brand, category) values
   ('444444444444', 'Garden Fungus Control', 'PureLeaf', 'Fungicide'),
   ('555555555555', 'Organic Bug Mist', 'GreenNest', 'Insecticide'),
   ('666666666666', 'Heavy Duty Lawn Killer', 'AgriPower', 'Herbicide');
+
+insert into products (barcode, name, brand, category, image_url) values
+  ('311105009067', 'Roundup Weedkiller', 'Roundup', 'Herbicide',
+  '/roundup-weedkiller.svg');
 
 -- 6) Product ↔ Ingredient links
 insert into product_ingredients (product_id, ingredient_id)
@@ -165,6 +173,12 @@ select p.id, i.id
 from products p
 join ingredients i on i.name = 'Malathion'
 where p.barcode = '666666666666';
+
+insert into product_ingredients (product_id, ingredient_id)
+select p.id, i.id
+from products p
+join ingredients i on i.name = 'Glyphosate'
+where p.barcode = '311105009067';
 
 -- 7) Helpful debug view
 create or replace view product_ingredient_report as
