@@ -18,6 +18,7 @@ type ScanResult = {
   found: boolean;
   message?: string;
   product?: {
+    barcode?: string;
     name: string;
     brand?: string;
     category?: string;
@@ -73,7 +74,7 @@ export default function ScanPage() {
           scannedAt: new Date().toISOString(),
         });
 
-        router.push(`/product/${code}`);
+        router.push(`/product/${data.product.barcode || code}`);
       }
     } catch (err) {
       console.error(err);

@@ -7,18 +7,31 @@ export async function GET(
   context: { params: Promise<{ barcode: string }> }
 ) {
   const { barcode } = await context.params;
+  const normalizedBarcode = barcode.replace(/\D/g, "");
+  const barcodeCandidates = Array.from(
+    new Set([
+      normalizedBarcode,
+      normalizedBarcode.length === 12
+        ? `0${normalizedBarcode}`
+        : normalizedBarcode,
+      normalizedBarcode.length === 13
+        ? normalizedBarcode.slice(1)
+        : normalizedBarcode,
+    ])
+  );
 
   const { data: product, error: productError } = await supabase
     .from("products")
     .select("*")
-    .eq("barcode", barcode)
-    .single();
+    .in("barcode", barcodeCandidates)
+    .limit(1)
+    .maybeSingle();
 
   if (productError || !product) {
     return NextResponse.json({
       found: false,
-      message: "Product not found",
-      debug: { productError },
+      message: `Product not found for barcode ${normalizedBarcode || barcode}`,
+      debug: { productError, barcodeCandidates },
     });
   }
 
