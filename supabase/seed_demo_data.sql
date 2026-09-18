@@ -86,8 +86,12 @@ insert into products (barcode, name, brand, category) values
   ('666666666666', 'Heavy Duty Lawn Killer', 'AgriPower', 'Herbicide');
 
 insert into products (barcode, name, brand, category, image_url) values
-  ('311105009067', 'Roundup Weedkiller', 'Roundup', 'Herbicide',
+  ('9311105009067', 'Roundup Weedkiller', 'Roundup', 'Herbicide',
   '/roundup-weedkiller.svg');
+
+insert into products (barcode, name, brand, category, image_url) values
+  ('9310963001169', 'Garden Basics 1.2L Ready To Use Pyrethrum', 'Garden Basics', 'Insecticide',
+  '/garden-basics-pyrethrum.svg');
 
 -- 6) Product ↔ Ingredient links
 insert into product_ingredients (product_id, ingredient_id)
@@ -179,6 +183,12 @@ select p.id, i.id
 from products p
 join ingredients i on i.name = 'Glyphosate'
 where p.barcode = '311105009067';
+
+insert into product_ingredients (product_id, ingredient_id)
+select p.id, i.id
+from products p
+join ingredients i on i.name = 'Pyrethrin'
+where p.barcode = '9310963001169';
 
 -- 7) Helpful debug view
 create or replace view product_ingredient_report as
