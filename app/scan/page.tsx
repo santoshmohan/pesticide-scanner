@@ -34,6 +34,10 @@ type ScanResult = {
   };
 };
 
+type SampleBarcode = {
+  barcode: string;
+};
+
 export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
@@ -44,7 +48,28 @@ export default function ScanPage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
   const [scannerStarted, setScannerStarted] = useState(false);
+  const [sampleBarcode, setSampleBarcode] = useState<SampleBarcode | null>(null);
+  const [sampleLoading, setSampleLoading] = useState(true);
+  const [sampleCopied, setSampleCopied] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadSampleBarcode() {
+      try {
+        const res = await fetch("/api/products/sample", { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as SampleBarcode;
+        setSampleBarcode(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSampleLoading(false);
+      }
+    }
+
+    loadSampleBarcode();
+  }, []);
 
   async function lookupBarcode(code: string) {
     if (!code.trim()) {
@@ -138,6 +163,20 @@ export default function ScanPage() {
     setLoading(false);
   }
 
+  async function copySampleBarcode() {
+    if (!sampleBarcode) return;
+
+    try {
+      await navigator.clipboard.writeText(sampleBarcode.barcode);
+      setManualBarcode(sampleBarcode.barcode);
+      setSampleCopied(true);
+      window.setTimeout(() => setSampleCopied(false), 1800);
+    } catch (err) {
+      console.error(err);
+      setError("Could not copy barcode. Please select it and copy manually.");
+    }
+  }
+
   useEffect(() => {
     return () => {
       stopScanner();
@@ -209,6 +248,36 @@ export default function ScanPage() {
           >
             {loading ? "Looking up..." : "Search Barcode"}
           </button>
+        </div>
+
+        {/* Sample Barcode */}
+        <div className="rounded-xl bg-blue-50 p-4">
+          <div className="flex flex-wrap items-start gap-3">
+            <div className="rounded-lg bg-blue-100 px-3 py-2 text-blue-700" aria-hidden="true">
+              |||
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-gray-800">Need a sample barcode?</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Copy this example and paste it into the input field.
+              </p>
+            </div>
+            {sampleLoading ? (
+              <span className="text-sm text-gray-500">Loading...</span>
+            ) : sampleBarcode ? (
+              <div className="flex max-w-full shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                <span className="break-all font-mono text-sm text-gray-700">{sampleBarcode.barcode}</span>
+                <button
+                  type="button"
+                  onClick={copySampleBarcode}
+                  className="text-sm font-semibold text-blue-700 hover:text-blue-900"
+                  title="Copy sample barcode"
+                >
+                  {sampleCopied ? "Copied" : "Copy"}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/* Error */}
