@@ -2,35 +2,58 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { saveToHistory } from "../../lib/history";
+import { 
+  saveToHistory, 
+  getRecentScans, 
+  formatScanDate 
+} from "@/lib/history";
+import { 
+  getVerdictColor, 
+  getRiskLevelColor,
+  getSafetyPercentage 
+} from "@/lib/score";
 import { useRouter } from "next/navigation";
 import BottomNav from "../components/BottomNav";
+import type { HistoryItem, ScoreResult } from "@/lib/history";
+
+type Product = {
+  id: number;
+  barcode: string;
+  name: string;
+  brand?: string;
+  category?: string;
+  image_url?: string;
+};
 
 type Ingredient = {
   id: number;
   name: string;
-  risk_level: string;
+  risk_level: "low" | "medium" | "high";
   score_penalty: number;
   concerns: string;
 };
 
-type ScanResult = {
+type ApiResponse = {
   found: boolean;
   message?: string;
-  product?: {
-    barcode?: string;
-    name: string;
-    brand?: string;
-    category?: string;
-  };
+  product?: Product;
   ingredients?: Ingredient[];
-  result?: {
-    score: number;
-    verdict: string;
-    warnings: {
-      ingredient: string;
-      concerns: string;
-    }[];
+  result?: ScoreResult;
+  stats?: {
+    totalIngredients: number;
+    highRiskCount: number;
+    mediumRiskCount: number;
+    lowRiskCount: number;
+    totalPenalty: number;
+    safetyPercentage: number;
+  };
+  ui?: {
+    verdictColor: string;
+    riskLevelColors: {
+      high: string;
+      medium: string;
+      low: string;
+    };
   };
 };
 
@@ -45,30 +68,36 @@ export default function ScanPage() {
   const [barcode, setBarcode] = useState("");
   const [manualBarcode, setManualBarcode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanResult, setScanResult] = useState<ApiResponse | null>(null);
   const [error, setError] = useState("");
   const [scannerStarted, setScannerStarted] = useState(false);
   const [sampleBarcode, setSampleBarcode] = useState<SampleBarcode | null>(null);
   const [sampleLoading, setSampleLoading] = useState(true);
   const [sampleCopied, setSampleCopied] = useState(false);
+  const [recentScans, setRecentScans] = useState<HistoryItem[]>([]);
   const router = useRouter();
 
+  // Load sample barcode and recent scans on mount
   useEffect(() => {
-    async function loadSampleBarcode() {
+    async function loadInitialData() {
       try {
         const res = await fetch("/api/products/sample", { cache: "no-store" });
-        if (!res.ok) return;
-
-        const data = (await res.json()) as SampleBarcode;
-        setSampleBarcode(data);
+        if (res.ok) {
+          const data = (await res.json()) as SampleBarcode;
+          setSampleBarcode(data);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load sample barcode:", err);
       } finally {
         setSampleLoading(false);
       }
+
+      // Load recent scans from localStorage
+      const recent = getRecentScans(5);
+      setRecentScans(recent);
     }
 
-    loadSampleBarcode();
+    loadInitialData();
   }, []);
 
   async function lookupBarcode(code: string) {
@@ -77,18 +106,20 @@ export default function ScanPage() {
       return;
     }
 
-
     setLoading(true);
     setError("");
     setScanResult(null);
 
     try {
       const res = await fetch(`/api/products/${code}`);
-      const data = await res.json();
+      const data = (await res.json()) as ApiResponse;
+      
       setBarcode(code);
       setScanResult(data);
-      if (data.found && data.product && data.result) {
-        saveToHistory({
+
+      if (data.found && data.product && data.result && data.stats) {
+        // Save to history with complete data
+        const historyItem: HistoryItem = {
           barcode: code,
           name: data.product.name,
           brand: data.product.brand,
@@ -97,13 +128,24 @@ export default function ScanPage() {
           score: data.result.score,
           verdict: data.result.verdict,
           scannedAt: new Date().toISOString(),
-        });
+          totalIngredients: data.stats.totalIngredients,
+          highRiskCount: data.stats.highRiskCount,
+          mediumRiskCount: data.stats.mediumRiskCount,
+        };
 
-        router.push(`/product/${data.product.barcode || code}`);
+        saveToHistory(historyItem);
+
+        // Update recent scans
+        setRecentScans(getRecentScans(5));
+
+        // Redirect after a brief delay
+        setTimeout(() => {
+          router.push(`/product/${data.product?.barcode || code}`);
+        }, 500);
       }
     } catch (err) {
-      console.error(err);
-      setError("Failed to fetch product");
+      console.error("Failed to fetch product:", err);
+      setError("Failed to fetch product. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,7 +160,7 @@ export default function ScanPage() {
       const devices = await BrowserMultiFormatReader.listVideoInputDevices();
 
       if (!devices.length) {
-        setError("No camera found");
+        setError("No camera found. Please use manual entry or check permissions.");
         return;
       }
 
@@ -130,11 +172,9 @@ export default function ScanPage() {
         async (result, err) => {
           if (result) {
             const scannedCode = result.getText();
-
             controls.stop();
             controlsRef.current = null;
             setScannerStarted(false);
-
             await lookupBarcode(scannedCode);
           }
         }
@@ -143,8 +183,10 @@ export default function ScanPage() {
       controlsRef.current = controls;
       setScannerStarted(true);
     } catch (err) {
-      console.error(err);
-      setError("Camera access failed. Please allow camera permission or enter barcode manually.");
+      console.error("Scanner error:", err);
+      setError(
+        "Camera access failed. Please allow camera permissions or enter barcode manually."
+      );
     }
   }
 
@@ -170,13 +212,14 @@ export default function ScanPage() {
       await navigator.clipboard.writeText(sampleBarcode.barcode);
       setManualBarcode(sampleBarcode.barcode);
       setSampleCopied(true);
-      window.setTimeout(() => setSampleCopied(false), 1800);
+      setTimeout(() => setSampleCopied(false), 1800);
     } catch (err) {
-      console.error(err);
+      console.error("Copy failed:", err);
       setError("Could not copy barcode. Please select it and copy manually.");
     }
   }
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopScanner();
@@ -184,174 +227,281 @@ export default function ScanPage() {
   }, []);
 
   const score = scanResult?.result?.score ?? 0;
-
-  const scoreColor =
-    score >= 70
-      ? "bg-green-500"
-      : score >= 40
-        ? "bg-yellow-500"
-        : "bg-red-500";
+  const stats = scanResult?.stats;
+  const resultUI = scanResult?.ui;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow p-4 space-y-4">
-        <h1 className="text-2xl font-bold text-center">Scan Product</h1>
-        <p className="text-sm text-gray-600 text-center">
-          Scan a barcode with your camera or enter it manually.
-        </p>
+    <main className="min-h-screen bg-gray-50 pb-24">
+      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">📱 Scan Product</h1>
+          <p className="text-sm text-gray-600 mt-2">
+            Scan a barcode or enter it manually to check ingredient safety
+          </p>
+        </div>
 
-        {/* Camera Section */}
-        <div className="space-y-3">
-          <video
-            ref={videoRef}
-            className="w-full rounded-xl border bg-black min-h-[220px]"
-          />
+        {/* Camera Scanner Section */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden space-y-3 p-4">
+          <div className="space-y-3">
+            <video
+              ref={videoRef}
+              className="w-full rounded-xl border-2 border-gray-200 bg-black min-h-[240px]"
+            />
 
-          {!scannerStarted ? (
+            {!scannerStarted ? (
+              <button
+                onClick={startScanner}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition"
+              >
+                📷 Start Camera Scanner
+              </button>
+            ) : (
+              <button
+                onClick={stopScanner}
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-xl font-semibold transition"
+              >
+                ⏹️ Stop Scanner
+              </button>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="h-px bg-gray-200 flex-1" />
+            <span className="text-xs text-gray-400 font-semibold">OR</span>
+            <div className="h-px bg-gray-200 flex-1" />
+          </div>
+
+          {/* Manual Input */}
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={manualBarcode}
+              onChange={(e) => setManualBarcode(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  lookupBarcode(manualBarcode);
+                }
+              }}
+              placeholder="Enter barcode manually"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+
             <button
-              onClick={startScanner}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-medium"
+              onClick={() => lookupBarcode(manualBarcode)}
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 rounded-xl font-semibold transition"
             >
-              Start Camera Scanner
+              {loading ? "🔍 Looking up..." : "🔍 Search Barcode"}
             </button>
-          ) : (
-            <button
-              onClick={stopScanner}
-              className="w-full bg-gray-800 text-white py-3 rounded-xl font-medium"
-            >
-              Stop Scanner
-            </button>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="h-px bg-gray-200 flex-1" />
-          <span className="text-sm text-gray-400">OR</span>
-          <div className="h-px bg-gray-200 flex-1" />
-        </div>
-
-        {/* Manual Input */}
-        <div className="space-y-3">
-          <input
-            type="text"
-            value={manualBarcode}
-            onChange={(e) => setManualBarcode(e.target.value)}
-            placeholder="Enter barcode manually"
-            className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500"
-          />
-
-          <button
-            onClick={() => lookupBarcode(manualBarcode)}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium disabled:opacity-50"
-          >
-            {loading ? "Looking up..." : "Search Barcode"}
-          </button>
-        </div>
-
-        {/* Sample Barcode */}
-        <div className="rounded-xl bg-blue-50 p-4">
-          <div className="flex flex-wrap items-start gap-3">
-            <div className="rounded-lg bg-blue-100 px-3 py-2 text-blue-700" aria-hidden="true">
-              |||
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-gray-800">Need a sample barcode?</p>
-              <p className="mt-1 text-sm text-gray-600">
-                Copy this example and paste it into the input field.
-              </p>
-            </div>
-            {sampleLoading ? (
-              <span className="text-sm text-gray-500">Loading...</span>
-            ) : sampleBarcode ? (
-              <div className="flex max-w-full shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
-                <span className="break-all font-mono text-sm text-gray-700">{sampleBarcode.barcode}</span>
-                <button
-                  type="button"
-                  onClick={copySampleBarcode}
-                  className="text-sm font-semibold text-blue-700 hover:text-blue-900"
-                  title="Copy sample barcode"
-                >
-                  {sampleCopied ? "Copied" : "Copy"}
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
 
-        {/* Error */}
+        {/* Sample Barcode Card */}
+        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
+          <div className="flex gap-3">
+            <div className="text-2xl">📊</div>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-800">Try a Sample Barcode</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Copy the example below to test the app
+              </p>
+
+              {sampleLoading ? (
+                <div className="mt-3 text-sm text-gray-500">Loading sample...</div>
+              ) : sampleBarcode ? (
+                <div className="mt-3 flex items-center gap-2 bg-white rounded-lg p-2 border border-blue-200">
+                  <code className="flex-1 text-sm font-mono text-gray-700 break-all">
+                    {sampleBarcode.barcode}
+                  </code>
+                  <button
+                    onClick={copySampleBarcode}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap ml-2"
+                  >
+                    {sampleCopied ? "✓ Copied" : "Copy"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Error Message */}
         {error && (
-          <p className="text-red-600 text-sm text-center">{error}</p>
-        )}
-
-        {/* Barcode */}
-        {barcode && (
-          <div className="border rounded-xl p-3 bg-gray-50">
-            <p className="text-sm text-gray-500">Barcode</p>
-            <p className="font-mono">{barcode}</p>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p className="text-red-700 text-sm">⚠️ {error}</p>
           </div>
         )}
 
-        {/* Found Result */}
-        {scanResult?.found && scanResult.product && scanResult.result && (
-          <div className="space-y-4">
-            <div className={`text-white ${scoreColor} rounded-2xl p-6 text-center`}>
-              <p className="text-sm uppercase">Score</p>
-              <p className="text-4xl font-bold">{scanResult.result.score}/100</p>
-              <p className="text-lg">{scanResult.result.verdict}</p>
+        {/* Scanned Barcode Display */}
+        {barcode && (
+          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+            <p className="text-xs text-gray-500 font-semibold uppercase">Scanned Barcode</p>
+            <p className="font-mono text-lg mt-1">{barcode}</p>
+          </div>
+        )}
+
+        {/* Scan Result - Found */}
+        {scanResult?.found && scanResult.product && scanResult.result && stats && resultUI && (
+          <div className="space-y-4 animate-in fade-in">
+            {/* Score Card */}
+            <div
+              className={`text-white rounded-2xl p-6 text-center border-4 ${resultUI.verdictColor}`}
+            >
+              <p className="text-xs uppercase font-semibold opacity-90">Safety Score</p>
+              <p className="text-5xl font-bold mt-2">{scanResult.result.score}</p>
+              <p className="text-lg font-semibold mt-1">{scanResult.result.verdict}</p>
+              <div className="mt-3 bg-white bg-opacity-20 rounded-lg px-3 py-1 inline-block text-sm">
+                {stats.safetyPercentage}% safe
+              </div>
             </div>
 
-            <div className="border rounded-xl p-4">
-              <h2 className="font-bold text-lg">{scanResult.product.name}</h2>
-              <p className="text-gray-600">
+            {/* Product Info */}
+            <div className="bg-white rounded-2xl shadow-sm p-4">
+              {scanResult.product.image_url && (
+                <img
+                  src={scanResult.product.image_url}
+                  alt={scanResult.product.name}
+                  className="w-full h-48 object-cover rounded-xl mb-4"
+                />
+              )}
+              <h2 className="font-bold text-xl">{scanResult.product.name}</h2>
+              <p className="text-gray-600 text-sm mt-1">
                 {scanResult.product.brand || "Unknown brand"}
-                {" • "}
-                {scanResult.product.category || "Unknown category"}
+                {scanResult.product.category && ` • ${scanResult.product.category}`}
               </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Ingredients</h3>
-              <ul className="space-y-2">
-                {scanResult.ingredients?.map((ingredient) => (
-                  <li key={ingredient.id} className="border rounded-lg p-3">
-                    <p className="font-medium">{ingredient.name}</p>
-                    <p className="text-sm text-gray-600">
-                      Risk: {ingredient.risk_level} | Penalty: -{ingredient.score_penalty}
-                    </p>
-                    <p className="text-sm">{ingredient.concerns}</p>
-                  </li>
-                ))}
-              </ul>
+            {/* Risk Stats */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-red-600">
+                  {stats.highRiskCount}
+                </p>
+                <p className="text-xs text-red-600 font-semibold">High Risk</p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.mediumRiskCount}
+                </p>
+                <p className="text-xs text-yellow-600 font-semibold">Medium Risk</p>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.lowRiskCount}
+                </p>
+                <p className="text-xs text-green-600 font-semibold">Low Risk</p>
+              </div>
             </div>
 
-            <div className="text-xs text-gray-500 border-t pt-3">
-              This score is for educational/demo purposes only and does not replace
-              official label instructions or regulatory guidance.
+            {/* Summary */}
+            {scanResult.result.summary && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-gray-700">{scanResult.result.summary}</p>
+              </div>
+            )}
+
+            {/* Ingredients List */}
+            {scanResult.ingredients && scanResult.ingredients.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-gray-50">
+                  <h3 className="font-semibold">
+                    Ingredients ({scanResult.ingredients.length})
+                  </h3>
+                </div>
+                <div className="divide-y">
+                  {scanResult.ingredients.map((ingredient) => {
+                    const color = getRiskLevelColor(ingredient.risk_level);
+                    return (
+                      <div
+                        key={ingredient.id}
+                        className={`p-4 ${color}`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1">
+                            <p className="font-semibold">{ingredient.name}</p>
+                            <p className="text-xs opacity-75 mt-1 uppercase font-semibold">
+                              {ingredient.risk_level} Risk
+                            </p>
+                            <p className="text-sm mt-2">{ingredient.concerns}</p>
+                          </div>
+                          <span className="text-lg font-bold opacity-50 whitespace-nowrap">
+                            -{ingredient.score_penalty}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Disclaimer */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+              <p className="text-xs text-gray-600">
+                ⚠️ <strong>Disclaimer:</strong> This score is for educational purposes only and 
+                does not replace official label instructions or regulatory guidance.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Not Found */}
+        {/* Scan Result - Not Found */}
         {scanResult && !scanResult.found && (
-          <div className="border rounded-xl p-4 text-center">
-            <p className="text-gray-700">
-              {scanResult.message || "Product not found"}
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-6 text-center">
+            <p className="text-orange-900 font-medium text-lg">🔍 Product Not Found</p>
+            <p className="text-orange-700 text-sm mt-2">
+              {scanResult.message ||
+                "We couldn't find this product in our database. Try another barcode."}
             </p>
           </div>
         )}
 
-        {/* Reset */}
-        <button
-          onClick={resetAll}
-          className="w-full bg-black text-white py-3 rounded-xl font-medium"
-        >
-          Reset
-        </button>
+        {/* Recent Scans */}
+        {recentScans.length > 0 && !scanResult && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b bg-gray-50">
+              <h3 className="font-semibold">📋 Recent Scans</h3>
+            </div>
+            <div className="divide-y max-h-64 overflow-y-auto">
+              {recentScans.map((scan) => (
+                <button
+                  key={scan.id}
+                  onClick={() => {
+                    setManualBarcode(scan.barcode);
+                    lookupBarcode(scan.barcode);
+                  }}
+                  className="w-full text-left p-4 hover:bg-gray-50 transition"
+                >
+                  <p className="font-semibold text-gray-900">{scan.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {scan.brand} • {formatScanDate(scan.scannedAt)}
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm font-bold">{scan.score}/100</span>
+                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">
+                      {scan.verdict}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reset Button */}
+        {scanResult && (
+          <button
+            onClick={resetAll}
+            className="w-full bg-black hover:bg-gray-900 text-white py-3 rounded-xl font-semibold transition"
+          >
+            🔄 Reset & Scan Again
+          </button>
+        )}
       </div>
+
       <BottomNav />
     </main>
-
   );
 }
