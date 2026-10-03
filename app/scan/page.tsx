@@ -15,7 +15,8 @@ import {
 import { getProductImageUrl } from "@/lib/product-image";
 import { useRouter } from "next/navigation";
 import BottomNav from "../components/BottomNav";
-import type { HistoryItem, ScoreResult } from "@/lib/history";
+import type { HistoryItem } from "@/lib/history";
+import type { ScoreResult } from "@/lib/score";
 
 type Product = {
   id: number;
