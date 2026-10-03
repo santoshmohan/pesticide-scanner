@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { 
   calculateScore, 
   getVerdictColor, 
@@ -17,6 +17,7 @@ export default async function ProductReviewPage({
   params: Promise<{ barcode: string }>;
 }) {
   const { barcode } = await params;
+  const supabase = getSupabase();
 
   // Fetch product
   const { data: product } = await supabase

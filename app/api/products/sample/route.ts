@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase";
+import { getSupabase } from "../../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { data: products, error } = await supabase
+  const { data: products, error } = await getSupabase()
     .from("products")
     .select("barcode")
     .not("barcode", "is", null);

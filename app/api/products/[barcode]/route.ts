@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase, supabaseService } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
+import { getSupabaseService } from "@/lib/supabase-service";
 import { 
   calculateScore, 
   getVerdictColor, 
@@ -13,6 +14,7 @@ export async function GET(
   context: { params: Promise<{ barcode: string }> }
 ) {
   try {
+    const supabase = getSupabase();
     const { barcode } = await context.params;
     const normalizedBarcode = barcode.replace(/\D/g, "");
 
@@ -189,7 +191,7 @@ export async function POST(request: Request) {
     }
 
     // Insert using service role (server-side only, bypasses RLS)
-    const { data, error } = await supabaseService
+    const { data, error } = await getSupabaseService()
       .from("issues")
       .insert({
         barcode,

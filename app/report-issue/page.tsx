@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BottomNav from "../components/BottomNav";
-import { supabase } from "../../lib/supabase";
+import { getSupabase } from "../../lib/supabase";
 
 
 
@@ -26,7 +26,7 @@ function ReportIssueForm() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        const { error } = await supabase.from("issues").insert({
+        const { error } = await getSupabase().from("issues").insert({
             barcode: formData.barcode,
             product_name: formData.productName,
             issue_type: formData.issueType,
