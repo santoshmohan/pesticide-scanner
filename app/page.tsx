@@ -11,6 +11,7 @@ import {
   type HistoryItem 
 } from "@/lib/history";
 import { getVerdictColor } from "@/lib/score";
+import { getProductImageUrl } from "@/lib/product-image";
 import BottomNav from "./components/BottomNav";
 
 export default function HomePage() {
@@ -208,9 +209,9 @@ export default function HomePage() {
                   <div className="flex items-start gap-4">
                     {/* Product Image */}
                     <img
-                      src={item.image_url || "https://placehold.co/80x80?text=Product"}
+                      src={getProductImageUrl(item.image_url) || "https://placehold.co/80x80?text=Product"}
                       alt={item.name}
-                      className="w-20 h-20 rounded-xl object-cover bg-gray-200 flex-shrink-0"
+                      className="w-20 h-20 rounded-xl object-contain bg-gray-200 flex-shrink-0"
                     />
 
                     {/* Product Info */}

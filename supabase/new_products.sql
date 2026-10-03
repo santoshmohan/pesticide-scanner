@@ -26,34 +26,34 @@ INSERT INTO ingredients (name, risk_level, score_penalty, concerns) VALUES
 -- 2) ADD PRODUCTS WITH REAL BARCODES FROM PDF
 INSERT INTO products (barcode, name, brand, category, image_url) VALUES
   -- Product 1: Roundup 1L Natural Weedkiller
-  ('9311105008992', 'Roundup 1L Natural Weedkiller', 'Roundup', 'Herbicide', '/products/roundup.jpg'),
+  ('9311105008992', 'Roundup 1L Natural Weedkiller', 'Roundup', 'Herbicide', '/roundup.jpg'),
   
   -- Product 2: Seasol 4L For Lush Green Lawns Concentrate
-  ('9320124232813', 'Seasol 4L For Lush Green Lawns Concentrate', 'Seasol', 'Fertilizer', '/products/seasol-lawns.jpg'),
+  ('9320124232813', 'Seasol 4L For Lush Green Lawns Concentrate', 'Seasol', 'Fertilizer', '/seasol-lawns.jpg'),
   
   -- Product 3: Brunnings 1.2L Ready To Use Path Weeder
-  ('9310522100289', 'Brunnings 1.2L Ready To Use Path Weeder', 'Brunnings', 'Herbicide', '/products/brunnings-path-weeder.jpg'),
+  ('9310522100289', 'Brunnings 1.2L Ready To Use Path Weeder', 'Brunnings', 'Herbicide', '/brunnings-path-weeder.jpg'),
   
   -- Product 4: Seasol 1L EarthCare White Oil Insect Spray
-  ('9320124232561', 'Seasol 1L EarthCare White Oil Insect Spray', 'Seasol', 'Insecticide', '/products/seasol-white-oil.jpg'),
+  ('9320124232561', 'Seasol 1L EarthCare White Oil Insect Spray', 'Seasol', 'Insecticide', '/seasol-white-oil.jpg'),
   
   -- Product 5: Richgro 1L Beat-A-Bug Naturally Based Insect Spray
-  ('9318154288672', 'Richgro 1L Beat-A-Bug Naturally Based Insect Spray', 'Richgro', 'Insecticide', '/products/richgro-beat-a-bug.jpg'),
+  ('9318154288672', 'Richgro 1L Beat-A-Bug Naturally Based Insect Spray', 'Richgro', 'Insecticide', '/richgro-beat-a-bug.jpg'),
   
   -- Product 6: OCP 750ml Ready to Use Eco-Insect Killer
-  ('9310428571855', 'OCP 750ml Ready to Use Eco-Insect Killer', 'OCP', 'Insecticide', '/products/ocp-eco-insect-killer.jpg'),
+  ('9310428571855', 'OCP 750ml Ready to Use Eco-Insect Killer', 'OCP', 'Insecticide', '/ocp-eco-insect-killer.jpg'),
   
   -- Product 7: Seasol 1L EarthCare Organic Weedkiller Concentrate
-  ('9320124232592', 'Seasol 1L EarthCare Organic Weedkiller Concentrate', 'Seasol', 'Herbicide', '/products/seasol-organic-weedkiller.jpg'),
+  ('9320124232592', 'Seasol 1L EarthCare Organic Weedkiller Concentrate', 'Seasol', 'Herbicide', '/seasol-organic-weedkiller.jpg'),
   
   -- Product 8: Richgro 250ml Caterpillar Grasshopper and Millipede Killer
-  ('9312324080356', 'Richgro 250ml Caterpillar Grasshopper and Millipede Killer', 'Richgro', 'Insecticide', '/products/richgro-caterpillar-killer.jpg'),
+  ('9312324080356', 'Richgro 250ml Caterpillar Grasshopper and Millipede Killer', 'Richgro', 'Insecticide', '/richgro-caterpillar-killer.jpg'),
   
   -- Product 9: Richgro 1L Beat-A-Weed Natural Weedkiller Concentrate
-  ('9312324071026', 'Richgro 1L Beat-A-Weed Natural Weedkiller Concentrate', 'Richgro', 'Herbicide', '/products/richgro-beat-a-weed.jpg'),
+  ('9312324071026', 'Richgro 1L Beat-A-Weed Natural Weedkiller Concentrate', 'Richgro', 'Herbicide', '/richgro-beat-a-weed.jpg'),
   
   -- Product 10: OCP 750ml Ready to Use Eco-Pyrethrum PLUS
-  ('9310428571848', 'OCP 750ml Ready to Use Eco-Pyrethrum PLUS', 'OCP', 'Insecticide', '/products/ocp-eco-pyrethrum.jpg');
+  ('9310428571848', 'OCP 750ml Ready to Use Eco-Pyrethrum PLUS', 'OCP', 'Insecticide', '/ocp-eco-pyrethrum.jpg');
 
 -- 3) LINK PRODUCTS TO INGREDIENTS
 

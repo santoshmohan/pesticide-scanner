@@ -6,6 +6,7 @@ import {
   getSafetyPercentage 
 } from "@/lib/score";
 import { saveToHistory, formatScanDate } from "@/lib/history";
+import { getProductImageUrl } from "@/lib/product-image";
 import type { HistoryItem } from "@/lib/history";
 import Link from "next/link";
 import BottomNav from "../../components/BottomNav";
@@ -82,11 +83,11 @@ export default async function ProductReviewPage({
           <div className="flex gap-4">
             <img
               src={
-                product.image_url ||
+                getProductImageUrl(product.image_url) ||
                 "https://placehold.co/120x120?text=Product"
               }
               alt={product.name}
-              className="w-28 h-28 rounded-2xl object-cover bg-gray-100"
+              className="w-28 h-28 rounded-2xl object-contain bg-gray-100"
             />
 
             <div className="flex-1">

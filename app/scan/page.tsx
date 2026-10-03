@@ -12,6 +12,7 @@ import {
   getRiskLevelColor,
   getSafetyPercentage 
 } from "@/lib/score";
+import { getProductImageUrl } from "@/lib/product-image";
 import { useRouter } from "next/navigation";
 import BottomNav from "../components/BottomNav";
 import type { HistoryItem, ScoreResult } from "@/lib/history";
@@ -361,9 +362,9 @@ export default function ScanPage() {
             <div className="bg-white rounded-2xl shadow-sm p-4">
               {scanResult.product.image_url && (
                 <img
-                  src={scanResult.product.image_url}
+                  src={getProductImageUrl(scanResult.product.image_url)}
                   alt={scanResult.product.name}
-                  className="w-full h-48 object-cover rounded-xl mb-4"
+                  className="w-full h-48 object-contain rounded-xl mb-4"
                 />
               )}
               <h2 className="font-bold text-xl">{scanResult.product.name}</h2>
