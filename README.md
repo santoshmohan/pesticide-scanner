@@ -1,8 +1,8 @@
-# Pesticide Scanner
+# Bee Safe
 
-A web-based pesticide product scanner evaluates products based on ingredient risk levels and provides safety scores.
+A web-based product scanner evaluates ingredient safety and provides bee-friendly product guidance.
 
-![Pesticide Scanner](https://placehold.co/800x400?text=Pesticide+Scanner+Demo)
+![Bee Safe](https://placehold.co/800x400?text=Bee+Safe+Demo)
 
 ## 🌟 Features
 

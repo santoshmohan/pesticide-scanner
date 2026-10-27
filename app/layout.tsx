@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pesticide Scanner @BrickBots",
-  description: "Scan pesticides and get instant results",
+  title: "Bee Safe @BrickBots",
+  description: "Scan products and get instant safety results",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

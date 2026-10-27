@@ -81,8 +81,8 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#f7f7f7] pb-28">
       <div className="max-w-md mx-auto px-5 pt-10">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">🧪 Pesticide Scanner</h1>
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2">🐝 Bee Safe</h1>
           <p className="text-gray-600">
             Scan or enter barcodes to check ingredient safety
           </p>
