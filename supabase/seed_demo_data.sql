@@ -91,7 +91,7 @@ insert into products (barcode, name, brand, category, image_url) values
 
 insert into products (barcode, name, brand, category, image_url) values
   ('9310963001169', 'Garden Basics 1.2L Ready To Use Pyrethrum', 'Garden Basics', 'Insecticide',
-  '/garden-basics-pyrethrum.svg');
+  '/garden-basics-pyrethrum.png');
 
 -- 6) Product ↔ Ingredient links
 insert into product_ingredients (product_id, ingredient_id)
