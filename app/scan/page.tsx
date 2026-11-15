@@ -159,17 +159,8 @@ export default function ScanPage() {
 
     try {
       const codeReader = new BrowserMultiFormatReader();
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-
-      if (!devices.length) {
-        setError("No camera found. Please use manual entry or check permissions.");
-        return;
-      }
-
-      const selectedDeviceId = devices[0].deviceId;
-
-      const controls = await codeReader.decodeFromVideoDevice(
-        selectedDeviceId,
+      const controls = await codeReader.decodeFromConstraints(
+        { video: { facingMode: { exact: "environment" } } },
         videoRef.current!,
         async (result, err) => {
           if (result) {
@@ -187,7 +178,7 @@ export default function ScanPage() {
     } catch (err) {
       console.error("Scanner error:", err);
       setError(
-        "Camera access failed. Please allow camera permissions or enter barcode manually."
+        "Unable to access the back camera. Please allow camera permissions or enter the barcode manually."
       );
     }
   }
