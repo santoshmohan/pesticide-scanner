@@ -1,176 +1,195 @@
 # Bee Safe
 
-A web-based product scanner evaluates ingredient safety and provides bee-friendly product guidance.
+Bee Safe is a mobile-first product scanner that evaluates garden and household products for ingredient safety. Users can scan a barcode or enter it manually, review the product’s ingredients, see a safety score and verdict, and compare the ingredient risk breakdown to identify potentially harmful compounds.
 
-![Bee Safe](https://placehold.co/800x400?text=Bee+Safe+Demo)
+## Features
 
-## 🌟 Features
+- Barcode scanning with the device camera
+- Manual barcode entry as a fallback
+- Product scoring based on ingredient risk and penalty data
+- Verdicts: Excellent, Good, Moderate, Poor, and Bad
+- Local scan history with summary stats
+- Detailed product review pages with warnings, positives, and recommendations
+- Issue reporting form backed by Supabase
+- Mobile-friendly UI optimized for quick product checks
 
-- 📱 **Mobile-friendly web app** (PWA-ready)
-- 📷 **Barcode scanning** using device camera
-- ⌨️ **Manual barcode entry** for desktop/fallback
-- 🎯 **Product scoring** based on ingredient risk levels (0-100 scale)
-- 📊 **Verdict system**: Good / Moderate / Bad
-- 📝 **Scan history** stored locally
-- 📄 **Detailed product review pages** with positives, negatives, and recommendations
-- 📖 **Scoring methodology page**
-- 🐛 **Issue reporting system**
+## Tech stack
 
-## 🛠 Tech Stack
+- Next.js 16 with App Router
+- React 19 + TypeScript
+- Tailwind CSS
+- Supabase for product and issue data
+- ZXing browser barcode scanning
+- LocalStorage for scan history
 
-- **Frontend**: [Next.js 16](https://nextjs.org/) (App Router) + React
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
-- **Barcode Scanning**: [@zxing/browser](https://github.com/zxing-js/browser)
-- **Hosting**: [Vercel](https://vercel.com/)
+## Project overview
 
-## 📋 Prerequisites
+This app looks up a product from the `products` table, loads its linked ingredients from `product_ingredients`, calculates a safety score, and then displays a verdict, risk breakdown, and recommendations. The product review page also surfaces higher-risk ingredients and lower-risk ingredients so the user can judge whether a product is suitable.
 
-Before you begin, ensure you have:
+## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- A [Supabase](https://supabase.com/) account (free tier is fine)
-- A [Vercel](https://vercel.com/) account for deployment (optional)
+- Node.js 20+
+- npm
+- A Supabase project
 
-## 🚀 Getting Started
+## Local setup
 
 ### 1. Clone the repository
 
-```
+```bash
 git clone https://github.com/yourusername/pesticide-scanner.git
 cd pesticide-scanner
 ```
 
 ### 2. Install dependencies
-```
+
+```bash
 npm install
 ```
 
-### 3. Set up Supabase
-1. Go to supabase.com and create a new project
-2. Wait for the database to initialize
-3. Go to Project Settings → API
-4. Copy your:
-    - Project URL
-    - anon public API key
+### 3. Configure environment variables
 
-### 4. Create environment variables
-Create a .env.local file in the root directory:
-```
-env
+Create a `.env.local` file in the project root with the following values:
+
+```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-Replace with your actual Supabase credentials.
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
 
-### 5. Set up the database
-Open your Supabase project → SQL Editor and run the seed script:
+Notes:
+- The public environment variables are used by the browser client and product lookup APIs.
+- `SUPABASE_SERVICE_ROLE_KEY` is required for the issue reporting API route because it writes to the `issues` table server-side.
+- Do not commit `.env.local` to version control.
 
-```
-bash
+### 4. Set up the database
+
+Open your Supabase project in the SQL editor and run the seed script from the repository:
+
+```bash
 supabase/seed_demo_data.sql
-Or copy the contents of supabase/seed_demo_data.sql and paste into the SQL Editor.
 ```
 
-This creates:
+You can also use the individual SQL files in `supabase/` if you want to add or update product records incrementally. The app expects tables such as:
 
-- `ingredients` table
-- `products` table
-- `product_ingredients` junction table
-- `issues` table (for issue reporting)
-Sample demo data (8 products, 11 ingredients)
+- `products`
+- `ingredients`
+- `product_ingredients`
+- `issues`
 
-6. Run the development server
-```
+### 5. Run the app
+
+```bash
 npm run dev
-Open http://localhost:3000 in your browser.
 ```
 
-## 📱 Testing the App
-Sample Barcodes
-Use these barcodes to test the scanner:
+Then open `http://localhost:3000` in your browser.
 
-|Barcode	    |Product Name	          |Expected Score	|Verdict  |
-| ---         | ---                   |  :---:        |---      |
-|111111111111	|NatureSafe Yard Spray  |90             |	Good    |
-|987654321098	|BugShield Home	        |75             |	Good    |
-|123456789012	|WeedClear Pro	        |65	            | Moderate|
-|222222222222	|Ultra Weed Destroyer	  |30	            | Bad     |
-|666666666666	|Heavy Duty Lawn Killer	|35             |	Bad     |
+## Useful routes
 
-### Manual Testing
-- Go to `/scan`
-- Enter barcode: `111111111111`
-- Click Search Barcode
-- View product details with score
+- `/` – home page with scan history and summary stats
+- `/scan` – barcode scanner and manual lookup page
+- `/product/[barcode]` – detailed product review page
+- `/scoring-method` – scoring explanations and methodology
+- `/report-issue` – issue submission form
+- `/api/products/[barcode]` – product lookup and scoring API
+- `/api/products/sample` – returns a random product barcode for demo/testing
 
-### Camera Testing
-- Open on mobile device or allow camera access on desktop
-- Click Start Camera Scanner
-- Scan a printed barcode or display one on another screen
+## Database and sample data
 
-## 📂 Project Structure
-```
-text
+The repository contains Supabase SQL scripts under `supabase/` to seed the demo data used by the app. These include product and ingredient entries for sample garden and pesticide products.
+
+## Project structure
+
+```text
 pesticide-scanner/
 ├── app/
 │   ├── api/
 │   │   └── products/
-│   │       └── [barcode]/
-│   │           └── route.ts          # Product lookup API
+│   │       ├── [barcode]/
+│   │       │   └── route.ts
+│   │       └── sample/
+│   │           └── route.ts
+│   ├── components/
+│   │   └── BottomNav.tsx
 │   ├── product/
 │   │   └── [barcode]/
-│   │       └── page.tsx              # Product review page
-│   ├── scan/
-│   │   └── page.tsx                  # Scan page (camera + manual)
-│   ├── scoring-method/
-│   │   └── page.tsx                  # Scoring explanation page
+│   │       └── page.tsx
 │   ├── report-issue/
-│   │   └── page.tsx                  # Issue reporting form
-│   ├── page.tsx                      # Home page (history)
-│   ├── layout.tsx                    # Root layout
-│   └── globals.css                   # Global styles
+│   │   └── page.tsx
+│   ├── scan/
+│   │   └── page.tsx
+│   ├── scoring-method/
+│   │   └── page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
 ├── lib/
-│   ├── supabase.ts                   # Supabase client
-│   ├── score.ts                      # Scoring logic
-│   └── history.ts                    # LocalStorage history utility
+│   ├── history.ts
+│   ├── product-image.ts
+│   ├── score.ts
+│   ├── supabase-service.ts
+│   └── supabase.ts
+├── public/
+│   └── product images
 ├── supabase/
-│   └── seed_demo_data.sql            # Database seed script
-├── .env.local                        # Environment variables (not in repo)
+│   ├── add_four_products.sql
+│   ├── add_ocp_eco_oil.sql
+│   ├── add_seasol_natural_pyrethrum.sql
+│   ├── ingredients_rows.sql
+│   ├── new_products.sql
+│   ├── product_ingredients_rows.sql
+│   ├── products_rows.sql
+│   ├── seed_demo_data.sql
+│   └── update_data.sql
+├── .env.local
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
 ├── package.json
-├── tailwind.config.ts
+├── postcss.config.mjs
 ├── tsconfig.json
-└── README.md
+├── README.md
+└── ...
 ```
 
-## 🧮 Scoring Logic
-The scoring system works as follows:
+## Scoring logic
 
-- Base score: 100 points
-- Deductions based on ingredient risk level:
-    - High risk (e.g., carcinogens, neurotoxins): -30 to -35 points
-    - Medium risk (e.g., moderate toxicity): -15 to -20 points
-    - Low risk (e.g., minimal concern): -5 points
-- Final score is capped at minimum 0
+The app calculates a base score of 100 and subtracts penalties for ingredient risk:
 
-### Verdict Ranges
-- 70-100: Good (lower concern)
-- 40-69: Moderate (use with caution)
-- 0-39: Bad (high concern, consider alternatives)
+- High risk ingredients: larger deductions
+- Medium risk ingredients: moderate deductions
+- Low risk ingredients: small deductions or none
 
+The final score is then mapped to a verdict:
 
-## 📄 License
-MIT License - feel free to use this project for educational purposes.
+- 80–100: Excellent
+- 70–79: Good
+- 50–69: Moderate
+- 30–49: Poor
+- 0–29: Bad
 
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Verification and linting
 
-## 📧 Contact
-For questions or issues, contact: santosh.mce@gmail.com
+Typical project commands:
 
-## 🙏 Acknowledgments
-- Inspired by Yuka
-- Built with Next.js
-- Database powered by Supabase
-- Barcode scanning via ZXing
+```bash
+npm run lint
+npm run build
+npm run dev
+```
+
+## License
+
+This project is provided for educational and prototype use. Update the license text before production use if you plan to distribute or commercialize the app.
+
+## Contributing
+
+Contributions are welcome. If you’d like to improve the app, add more product data, or improve the scoring model, open a pull request with a clear description of the change.
+
+## Acknowledgements
+
+- Next.js
+- Supabase
+- ZXing
+- The product and ingredient data used for demo coverage
